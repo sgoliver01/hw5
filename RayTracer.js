@@ -75,7 +75,6 @@ export class RayTracer {
         v.normalize()
         w.normalize()
         
-        console.log(u,v,w)
         
         return [e, u, v, w]
         
@@ -152,7 +151,7 @@ export class RayTracer {
         // TODO      
         
         //for loop goes thru each light source --> think this needs to go after finding the first intersection
-        
+      //  return record.struckGeometry.j_material.v3_diffuse
         
         let color_added = new Vector3 (0,0,0)
         
@@ -160,7 +159,6 @@ export class RayTracer {
         const lights = this.scene.a_lights
         for (let i = 0; i <lights.length; i++) {
             //(lights[i].v3_position)
-            const light = lights[i]
             
             
             
@@ -171,8 +169,11 @@ export class RayTracer {
                 const cmp = (a,b) => a.t-b.t || isNaN(a.t)-isNaN(b.t);
                 const sortedrecord = record.sort(cmp)
                 
-                const final_light = this.whatLight(sortedrecord[0] ,light)
-                color_added.increaseBy(final_light)
+//                const final_light = this.whatLight(sortedrecord[0] ,light)
+//                color_added.increaseBy(final_light)
+              //  color_added = this.struckGeometry.j_material.v3_diffuse
+                console.log(sortedrecord[0])
+                return sortedrecord[0].struckGeometry.j_material.v3_diffuse
             }
             
             else {
@@ -471,21 +472,48 @@ class Ray {
         const v = this.dir
         
         
-        const intervalX = [(boxX[0] - e.x)/ v.x, (boxX[1] - e.x)/v.x]
-        const intervalY = [(boxY[0] - e.y)/ v.y, (boxY[1] - e.y)/v.y]
-        const intervalZ = [(boxZ[0] - e.z)/ v.z, (boxZ[1] - e.z)/v.z]
+        let intervalX = [(boxX[0] - e.x)/ v.x, (boxX[1] - e.x)/v.x]
+    //    console.log("first x interval", intervalX)
+        if (((boxX[0] - e.x)/ v.x) > ((boxX[1] - e.x)/v.x)) {
+
+            intervalX = [(boxX[1] - e.x)/v.x, (boxX[0] - e.x)/ v.x]
+        }
+        let intervalY = [(boxY[0] - e.y)/ v.y, (boxY[1] - e.y)/v.y]
+   //     console.log("first y interval", intervalY)
+          if (((boxY[0] - e.y)/ v.y) > ((boxY[1] - e.y)/v.y)) {
+            intervalY = [(boxY[1] - e.y)/v.y, (boxY[0] - e.y)/ v.y]
+        }
+        let intervalZ = [(boxZ[0] - e.z)/ v.z, (boxZ[1] - e.z)/v.z]
+    //    console.log("first z interval", intervalZ)
+          if (((boxZ[0] - e.z)/ v.z) > ((boxZ[1] - e.z)/v.z)) {
+            intervalZ = [(boxZ[1] - e.z)/v.z, (boxZ[0] - e.z)/ v.z]
+        }
+    //    console.log(intervalX, intervalY, intervalZ)
         
         
         //compute intersection of the intervals-- think of using a number line
         const max_start = (Math.max(intervalX[0], intervalY[0], intervalZ[0]))
        
         //have to amke sure the min is after the max
-        const min_start = (Math.min(intervalX[1], intervalY[1], intervalZ[1]))
+        const min_end = (Math.min(intervalX[1], intervalY[1], intervalZ[1]))
         
         
+     //   console.log(max_start, min_end)
         //if intervals overlap
-        if (max_start <= min_start) {
-            return [max_start, min_start]
+        if (max_start <= min_end) {
+            const t1 = max_start
+            const t2 = min_end
+
+            //points where ray hit at t1 and t2
+            const pt1 = this.tToPt(t1);
+            const pt2 = this.tToPt(t2);
+
+
+            const hit1 = new HitRecord(this, t1, pt1, g, (0,0,0))
+            const hit2 = new HitRecord(this, t2, pt2, g, (0,0,0))
+      
+           // return [max_start, min_start]
+            return [hit1, hit2]
         }
         else {
             
