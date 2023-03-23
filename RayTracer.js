@@ -153,6 +153,11 @@ export class RayTracer {
         //for loop goes thru each light source --> think this needs to go after finding the first intersection
       //  return record.struckGeometry.j_material.v3_diffuse
         
+        
+        
+        
+        
+        
         let color_added = new Vector3 (0,0,0)
         
         
@@ -169,7 +174,7 @@ export class RayTracer {
                 //take smallest t value thats positive !!!!!!!!!!!!!!!!!
                 const cmp = (a,b) => a.t-b.t || isNaN(a.t)-isNaN(b.t);
                 const sortedrecord = record.sort(cmp)
-                console.log(sortedrecord)
+                //console.log(sortedrecord)
                 
                 const final_light = this.whatLight(sortedrecord[0] ,light)
                 color_added.increaseBy(final_light)
@@ -216,6 +221,8 @@ export class RayTracer {
         const dif_color = this.diffuse(hit, light_source, toLight) 
         
         const spec_light = this.specular(hit, light_source, toLight)
+        
+        const reflect_color = this.reflection(hit)
      
      
         const returnMe = new Vector3(0,0,0)
@@ -225,6 +232,53 @@ export class RayTracer {
         
         
     }
+    
+    
+    
+    reflection(hit){
+        
+        let reflection_added = new Vector3 (0,0,0)
+        
+        //if hit geometry is reflective
+        if (hit.struckGeometry.j_material.f_reflectance>0){ 
+            
+            
+            const mirrorRay = bouce(hit)
+            
+            //TO DO NEXT: see if mirror ray hits anything, and if it does get color of that, also set recursion limit to 5-10 
+            
+            
+        }
+        
+        
+        
+        
+    }
+    
+    bounce(hit){
+        
+        const viewingRay = hit.ray
+        const normal = hit.normal
+        
+        
+        viewingRay.scaleBy(-1)
+        
+        
+        const top = viewingRay.dotProduct(normal)
+        const bottom = normal.dotProduct(normal)
+        
+        const total = normal.scaleBy(2*(top/bottom))
+        total.increaseByMultiple(viewingRay, -1)
+    
+        return total
+        
+    
+    }
+    
+    
+    
+    
+    
     
     
     
@@ -581,7 +635,7 @@ class Ray {
             else if (Math.abs(pt2.z - (g.v3_minPt.z +g.v3_dim.z))< EPSILON ) {
                 normal2 = new Vector3(0,0,1)
             }
-            console.log(normal1)
+            //console.log(normal1)
             
            // console.log(normal2)
 
