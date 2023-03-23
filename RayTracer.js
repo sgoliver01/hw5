@@ -166,13 +166,15 @@ export class RayTracer {
             
             if (record.length > 0) {
                 
-
+                //take smallest t value thats positive !!!!!!!!!!!!!!!!!
                 const cmp = (a,b) => a.t-b.t || isNaN(a.t)-isNaN(b.t);
                 const sortedrecord = record.sort(cmp)
+                console.log(sortedrecord)
                 
                 const final_light = this.whatLight(sortedrecord[0] ,light)
                 color_added.increaseBy(final_light)
               //  color_added = this.struckGeometry.j_material.v3_diffuse
+                //const ret = new Vector3(sortedrecord[0].struckGeometry.j_material.v3_diffuse)
                
             }
             
@@ -254,7 +256,7 @@ export class RayTracer {
 
         const specularity_power = hit.struckGeometry.j_material.f_specularity
         
-        if (specularity_power<0 || specularity_power==="undefined"){
+        if (specularity_power<0 || specularity_power===undefined){
             return new Vector3(0,0,0)
         }
         
@@ -538,32 +540,54 @@ class Ray {
             const pt1 = this.tToPt(t1);
             const pt2 = this.tToPt(t2);
             
-            let normal
+            let normal1
             
             if (Math.abs(pt1.x-g.v3_minPt.x) < EPSILON) {
-                normal = new Vector3(-1,0,0)
+                normal1 = new Vector3(-1,0,0)
             }
-            else if (Math.abs(pt1.x - (g.v3_minPt.x +g.v3_dim.x))) {
-                normal = new Vector3(1,0,0)
+            else if (Math.abs(pt1.x - (g.v3_minPt.x +g.v3_dim.x)) < EPSILON) {
+                normal1 = new Vector3(1,0,0)
             }
             else if (Math.abs(pt1.y-g.v3_minPt.y) < EPSILON) {
-                normal = new Vector3(0,-1,0)
+                normal1 = new Vector3(0,-1,0)
             }
-            else if (Math.abs(pt1.y - (g.v3_minPt.y +g.v3_dim.y))) {
-                normal = new Vector3(0,1,0)
+            else if (Math.abs(pt1.y - (g.v3_minPt.y +g.v3_dim.y)) < EPSILON) {
+                normal1 = new Vector3(0,1,0)
             }
             if (Math.abs(pt1.z-g.v3_minPt.z) < EPSILON) {
-                normal = new Vector3(0,0,-1)
+                normal1 = new Vector3(0,0,-1)
             }
-            else if (Math.abs(pt1.z - (g.v3_minPt.z +g.v3_dim.z))) {
-                normal = new Vector3(0,0,-1)
+            else if (Math.abs(pt1.z - (g.v3_minPt.z +g.v3_dim.z))< EPSILON ) {
+                normal1 = new Vector3(0,0,1)
             }
             
+            let normal2
             
+            if (Math.abs(pt2.x-g.v3_minPt.x) < EPSILON) {
+                normal2 = new Vector3(-1,0,0)
+            }
+            else if (Math.abs(pt2.x - (g.v3_minPt.x +g.v3_dim.x)) < EPSILON) {
+                normal2 = new Vector3(1,0,0)
+            }
+            else if (Math.abs(pt2.y-g.v3_minPt.y) < EPSILON) {
+                normal2 = new Vector3(0,-1,0)
+            }
+            else if (Math.abs(pt2.y - (g.v3_minPt.y +g.v3_dim.y)) < EPSILON) {
+                normal2 = new Vector3(0,1,0)
+            }
+            if (Math.abs(pt2.z-g.v3_minPt.z) < EPSILON) {
+                normal2 = new Vector3(0,0,-1)
+            }
+            else if (Math.abs(pt2.z - (g.v3_minPt.z +g.v3_dim.z))< EPSILON ) {
+                normal2 = new Vector3(0,0,1)
+            }
+            console.log(normal1)
+            
+           // console.log(normal2)
 
 
-            const hit1 = new HitRecord(this, t1, pt1, g, normal)
-            const hit2 = new HitRecord(this, t2, pt2, g, normal)
+            const hit1 = new HitRecord(this, t1, pt1, g, normal1)
+            const hit2 = new HitRecord(this, t2, pt2, g, normal2)
             
             
       
