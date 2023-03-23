@@ -159,6 +159,7 @@ export class RayTracer {
         const lights = this.scene.a_lights
         for (let i = 0; i <lights.length; i++) {
             //(lights[i].v3_position)
+            const light = lights[i]
             
             
             
@@ -172,8 +173,7 @@ export class RayTracer {
                 const final_light = this.whatLight(sortedrecord[0] ,light)
                 color_added.increaseBy(final_light)
               //  color_added = this.struckGeometry.j_material.v3_diffuse
-                const ret = new Vector3(sortedrecord[0].struckGeometry.j_material.v3_diffuse)
-                return ret
+               
             }
             
             else {
@@ -540,19 +540,19 @@ class Ray {
             
             let normal
             
-            if (Math.abs(pt1.x-minPt.x) < EPSILON) {
+            if (Math.abs(pt1.x-g.v3_minPt.x) < EPSILON) {
                 normal = new Vector3(-1,0,0)
             }
             else if (Math.abs(pt1.x - (g.v3_minPt.x +g.v3_dim.x))) {
                 normal = new Vector3(1,0,0)
             }
-            else if (Math.abs(pt1.y-minPt.y) < EPSILON) {
+            else if (Math.abs(pt1.y-g.v3_minPt.y) < EPSILON) {
                 normal = new Vector3(0,-1,0)
             }
             else if (Math.abs(pt1.y - (g.v3_minPt.y +g.v3_dim.y))) {
                 normal = new Vector3(0,1,0)
             }
-            if (Math.abs(pt1.z-minPt.z) < EPSILON) {
+            if (Math.abs(pt1.z-g.v3_minPt.z) < EPSILON) {
                 normal = new Vector3(0,0,-1)
             }
             else if (Math.abs(pt1.z - (g.v3_minPt.z +g.v3_dim.z))) {
