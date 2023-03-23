@@ -1,7 +1,7 @@
 /* A skeleton of this file was written by Duncan Levear in Spring 2023 for CS3333 at Boston College */
 import {Vector3, vectorSum, vectorDifference, vectorScaled} from './Vector3.js'
 
-
+const EPSILON = 1e-9
 
 export class RayTracer {
     constructor(sceneInfo, image) {
@@ -169,11 +169,11 @@ export class RayTracer {
                 const cmp = (a,b) => a.t-b.t || isNaN(a.t)-isNaN(b.t);
                 const sortedrecord = record.sort(cmp)
                 
-//                const final_light = this.whatLight(sortedrecord[0] ,light)
-//                color_added.increaseBy(final_light)
+                const final_light = this.whatLight(sortedrecord[0] ,light)
+                color_added.increaseBy(final_light)
               //  color_added = this.struckGeometry.j_material.v3_diffuse
-                console.log(sortedrecord[0])
-                return sortedrecord[0].struckGeometry.j_material.v3_diffuse
+                const ret = new Vector3(sortedrecord[0].struckGeometry.j_material.v3_diffuse)
+                return ret
             }
             
             else {
@@ -207,8 +207,6 @@ export class RayTracer {
         }
         
         
-        
-        
         const light_pos = light_source.v3_position
         const toLight = vectorDifference(light_pos, point).normalize()
         
@@ -239,19 +237,14 @@ export class RayTracer {
             return new Vector3(0,0,0)
         }
     
-        
-        
-//         if (m < 0) {
-//            m = 0
-//        }
+
         const color = vectorScaled(hit.struckGeometry.j_material.v3_diffuse, alignment)
         
         
         color.scaleBy(light.f_intensity)
-        //console.log(color)
+
        
         return color
-//        return m
         
     }
     
@@ -279,17 +272,13 @@ export class RayTracer {
    
        
         let s = outgoingLight.dotProduct(to_eye)
-        //var s = alignment/ (Math.sqrt(to_eye.dotProduct(to_eye)) * Math.sqrt(outgoingLight.dotProduct(outgoingLight)))
-        
+     
         if (s < 0) {
             s = 0
         }
         
         s = Math.pow(s,specularity_power)
-        //console.log(specularity_power)
-        
-        
-        
+                
         const final_spec = new Vector3(1,1,1)
         final_spec.scaleBy(s*light_source.f_intensity)
         
@@ -399,15 +388,6 @@ class Ray {
         */
         // TODO
         const r = g.f_radius        //sphere radius
-//        const CO = new Vector3(vectorDifference(this.start, g.v3_center))  //distance b/w start point of ray and circle center
-//        console.log("CO", CO)
-//        
-//        const a = this.dir.dotProduct(this.dir)       //<D,D>
-//        console.log("a", a)
-//        const b = 2*(CO.dotProduct(this.dir))           // s<CO,D>
-//        console.log("b", b)
-//        const c = CO.dotProduct(CO) - (r*r)    
-//        console.log("c", c)
         
         const u = vectorDifference(this.start, g.v3_center)         //A-q , start - spheres center
         const v = this.dir          //B-A
@@ -465,30 +445,80 @@ class Ray {
         // TODO
         
         
-        const boxX = [g.v3_minPt.x, g.v3_dim.x,]
-        const boxY = [g.v3_minPt.y, g.v3_dim.y]
-        const boxZ = [g.v3_minPt.z, g.v3_dim.z]
+        const boxX = [g.v3_minPt.x, g.v3_minPt.x +g.v3_dim.x]
+        const boxY = [g.v3_minPt.y, g.v3_minPt.y + g.v3_dim.y]
+        const boxZ = [g.v3_minPt.z, g.v3_minPt.z + g.v3_dim.z]
         const e = this.start
-        const v = this.dir
+        const v = this.dir 
         
+        let intervalX, intervalY, intervalZ
         
-        let intervalX = [(boxX[0] - e.x)/ v.x, (boxX[1] - e.x)/v.x]
-    //    console.log("first x interval", intervalX)
-        if (((boxX[0] - e.x)/ v.x) > ((boxX[1] - e.x)/v.x)) {
-
-            intervalX = [(boxX[1] - e.x)/v.x, (boxX[0] - e.x)/ v.x]
+        //X INTERVAL
+        
+        //if v.x is 0
+        if (v.x == 0) {
+            if ((boxX[0])<= e.x <= (boxX[1])) {
+                intervalX = [-1* Infinity, Infinity]
+            }
+            else {
+                return []
+            }
         }
-        let intervalY = [(boxY[0] - e.y)/ v.y, (boxY[1] - e.y)/v.y]
-   //     console.log("first y interval", intervalY)
-          if (((boxY[0] - e.y)/ v.y) > ((boxY[1] - e.y)/v.y)) {
-            intervalY = [(boxY[1] - e.y)/v.y, (boxY[0] - e.y)/ v.y]
+        
+        // if v is not 0
+        else {
+             intervalX = [(boxX[0] - e.x)/ v.x, (boxX[1] - e.x)/v.x]
+            //whap the values if the second is bigger than the second
+             if (((boxX[0] - e.x)/ v.x) > ((boxX[1] - e.x)/v.x)) {
+                 intervalX = [(boxX[1] - e.x)/v.x, (boxX[0] - e.x)/ v.x]
+                }
         }
-        let intervalZ = [(boxZ[0] - e.z)/ v.z, (boxZ[1] - e.z)/v.z]
-    //    console.log("first z interval", intervalZ)
-          if (((boxZ[0] - e.z)/ v.z) > ((boxZ[1] - e.z)/v.z)) {
-            intervalZ = [(boxZ[1] - e.z)/v.z, (boxZ[0] - e.z)/ v.z]
+        
+        //Y INTERVAL
+        
+        //if v.x is 0
+        if (v.y == 0) {
+            if ((boxY[0])<= e.y <= (boxY[1])) {
+                intervalY = [-1* Infinity, Infinity]
+            }
+            else {
+                return []
+            }
         }
-    //    console.log(intervalX, intervalY, intervalZ)
+        
+        // if v is not 0
+        else {
+             intervalY = [(boxY[0] - e.y)/ v.y, (boxY[1] - e.y)/v.y]
+            //whap the values if the second is bigger than the second
+             if (((boxY[0] - e.y)/ v.y) > ((boxY[1] - e.y)/v.y)) {
+                 intervalY = [(boxY[1] - e.y)/v.y, (boxY[0] - e.y)/ v.y]
+                }
+        }
+        
+         //Z INTERVAL
+        
+        //if v.z is 0
+        if (v.z == 0) {
+            if ((boxZ[0])<= e.z <= (boxZ[1])) {
+                intervalZ = [-1* Infinity, Infinity]
+            }
+            else {
+                return []
+            }
+            
+            if (boxZ[0] > boxZ[1]) {
+                 intervalZ = [(boxZ[1]), (boxZ[0])]
+            }
+        }
+        
+        // if v is not 0
+        else {
+             intervalZ = [(boxZ[0] - e.z)/ v.z, (boxZ[1] - e.z)/v.z]
+            //whap the values if the second is bigger than the second
+             if (((boxZ[0] - e.z)/ v.z) > ((boxZ[1] - e.z)/v.z)) {
+                 intervalZ = [(boxZ[1] - e.z)/v.z, (boxZ[0] - e.z)/ v.z]
+                }
+        }
         
         
         //compute intersection of the intervals-- think of using a number line
@@ -507,12 +537,36 @@ class Ray {
             //points where ray hit at t1 and t2
             const pt1 = this.tToPt(t1);
             const pt2 = this.tToPt(t2);
+            
+            let normal
+            
+            if (Math.abs(pt1.x-minPt.x) < EPSILON) {
+                normal = new Vector3(-1,0,0)
+            }
+            else if (Math.abs(pt1.x - (g.v3_minPt.x +g.v3_dim.x))) {
+                normal = new Vector3(1,0,0)
+            }
+            else if (Math.abs(pt1.y-minPt.y) < EPSILON) {
+                normal = new Vector3(0,-1,0)
+            }
+            else if (Math.abs(pt1.y - (g.v3_minPt.y +g.v3_dim.y))) {
+                normal = new Vector3(0,1,0)
+            }
+            if (Math.abs(pt1.z-minPt.z) < EPSILON) {
+                normal = new Vector3(0,0,-1)
+            }
+            else if (Math.abs(pt1.z - (g.v3_minPt.z +g.v3_dim.z))) {
+                normal = new Vector3(0,0,-1)
+            }
+            
+            
 
 
-            const hit1 = new HitRecord(this, t1, pt1, g, (0,0,0))
-            const hit2 = new HitRecord(this, t2, pt2, g, (0,0,0))
+            const hit1 = new HitRecord(this, t1, pt1, g, normal)
+            const hit2 = new HitRecord(this, t2, pt2, g, normal)
+            
+            
       
-           // return [max_start, min_start]
             return [hit1, hit2]
         }
         else {
