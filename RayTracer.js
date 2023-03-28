@@ -2,6 +2,8 @@
 import {Vector3, vectorSum, vectorDifference, vectorScaled} from './Vector3.js'
 
 const EPSILON = 1e-9
+let recursion_amount = 0
+
 
 export class RayTracer {
     constructor(sceneInfo, image) {
@@ -150,13 +152,6 @@ export class RayTracer {
         */
         // TODO      
         
-        //for loop goes thru each light source --> think this needs to go after finding the first intersection
-      //  return record.struckGeometry.j_material.v3_diffuse
-        
-        
-        
-        
-        
         
         let color_added = new Vector3 (0,0,0)
         
@@ -221,34 +216,62 @@ export class RayTracer {
         const dif_color = this.diffuse(hit, light_source, toLight) 
         
         const spec_light = this.specular(hit, light_source, toLight)
+        recursion_amount +=1
+        console.log(recursion_amount)
         
-        const reflect_color = this.reflection(hit)
+        const reflect_color = this.reflection(hit, recursion_amount)
      
      
         const returnMe = new Vector3(0,0,0)
         returnMe.increaseBy(dif_color)
         returnMe.increaseBy(spec_light)
+        returnMe.increaseBy(reflect_color)
         return returnMe
         
         
     }
     
     
-    
-    reflection(hit){
-        
+    reflection(hit, recursion_amount){
+                
         let reflection_added = new Vector3 (0,0,0)
+        let color = "hi"
+        let r = 0
         
         //if hit geometry is reflective
         if (hit.struckGeometry.j_material.f_reflectance>0){ 
             
             
-            const mirrorRay = bouce(hit)
-            
+            const mirrorRay = this.bounce(hit)
+            const mirror_hit = mirrorRay.allHits(this.scene.a_geometries); //returning a 
+        
             //TO DO NEXT: see if mirror ray hits anything, and if it does get color of that, also set recursion limit to 5-10 
+            console.log(mirror_hit)
+            
+            if (mirror_hit[0].struckGeometry.j_material.f_reflectance >0 && recursion_amount < 5) {
+                console.log("in loop")
+                r = mirror_hit[0].struckGeometry.j_material.f_reflectance
+                color = this.getColor(mirror_hit)
+                
+                
+               // console.log("recusion in loop", recursion_amount)
+            }
+            else {
+                console.log("else")
+                r = mirror_hit[0].struckGeometry.j_material.f_reflectance 
+                color = mirror_hit[0].struckGeometry.j_material.v3_diffuse
+                console.log(color)
+                
+            }
+            console.log(color)
+            
+            
+        reflection_added.increaseBy(color.scaleBy(r))
             
             
         }
+        
+        return reflection_added
         
         
         
@@ -258,19 +281,26 @@ export class RayTracer {
     bounce(hit){
         
         const viewingRay = hit.ray
+
+        const vectored_viewingRay = viewingRay.start.increaseBy(viewingRay.dir) //is this right????????
+        
+        
         const normal = hit.normal
         
+        vectored_viewingRay.scaleBy(-1)
         
-        viewingRay.scaleBy(-1)
         
         
-        const top = viewingRay.dotProduct(normal)
+        const top = vectored_viewingRay.dotProduct(normal)
         const bottom = normal.dotProduct(normal)
         
-        const total = normal.scaleBy(2*(top/bottom))
-        total.increaseByMultiple(viewingRay, -1)
+        const bounced = normal.scaleBy(2*(top/bottom))
+   
+        bounced.increaseByMultiple(vectored_viewingRay, -1)
+        
+        const bouncedRay = new Ray(vectored_viewingRay, bounced)
     
-        return total
+        return bouncedRay
         
     
     }
