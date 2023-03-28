@@ -166,7 +166,7 @@ export class RayTracer {
         // TODO      
         let color_added = new Vector3 (0,0,0)
         let reflectedAmount = 0
-        let reflectedColor = 0
+        let reflectedColor = new Vector3 (0,0,0)
 
         
         const lights = this.scene.a_lights
@@ -174,20 +174,21 @@ export class RayTracer {
             //(lights[i].v3_position)
             const light = lights[i]
             const diffuse_specular = this.whatLight(record, light)
-
+            color_added.increaseBy(diffuse_specular)
+        }
             //check if reflective
-            if (record.struckGeometry.j_material.f_reflectance>0 && recursion_amount < 3) {
+            if (record.struckGeometry.j_material.f_reflectance>0 && recursion_amount < 5 ) {
                 recursion_amount +=1 
                 reflectedAmount = record.struckGeometry.j_material.f_reflectance
-                console.log(reflectedAmount)
+                //console.log(reflectedAmount)
                 reflectedColor = this.reflected(record)
                 recursion_amount -=1
+                //console.log("reflected color", reflectedColor)
+                
+                color_added.increaseBy(reflectedColor.scaleBy(reflectedAmount))
+
                 
             }
-            color_added.increaseBy(reflectedColor.scaleBy(reflectedAmount))
-            color_added.increaseBy(diffuse_specular)
-            
-        }
     
         return color_added
 
@@ -232,6 +233,7 @@ export class RayTracer {
     reflected(hit){
                     
         const mirrorRay = this.bounce(hit)
+        
         const mirror_hit = this.traceRay(mirrorRay)
  
         return mirror_hit
@@ -246,17 +248,17 @@ export class RayTracer {
         
         const normal = hit.normal
         
-        const inverse = vectored_viewingRay.scaleBy(-1)
+        const inverse = new Vector3(vectored_viewingRay).scaleBy(-1)
 
         const top = inverse.dotProduct(normal)
         const bottom = normal.dotProduct(normal)
         
-        const bounced_beginning = normal.scaleBy(2*(top/bottom))
+        const bounced_beginning = new Vector3(normal).scaleBy(2*(top/bottom))
         
         const bounced = vectorDifference(bounced_beginning, inverse)
         
         const bouncedRay = new Ray(hit.pt, bounced)
-        console.log(bouncedRay)
+        //console.log("bounced Ray", bouncedRay)
     
         return bouncedRay
         
