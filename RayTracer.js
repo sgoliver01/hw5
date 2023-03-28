@@ -142,7 +142,20 @@ export class RayTracer {
         // TODO
         
         const hits = ray.allHits(this.scene.a_geometries);
-        return this.getColor(hits)
+        
+        let minHit = {t: Infinity}
+        for (const h of hits) {
+            if (h.t < minHit.t && h.t > EPSILON) {
+                minHit = h
+            }
+        }
+        
+        if (minHit.t === Infinity) {
+            return new Vector3(0,0,0)
+        }
+        
+        const c = this.getColor(minHit)
+        return c
         
     }
     
@@ -151,37 +164,31 @@ export class RayTracer {
         Determine the color that results from the given HitRecord.
         */
         // TODO      
-        
-        
         let color_added = new Vector3 (0,0,0)
-        
+        let reflectedAmount = 0
+        let reflectedColor = 0
+
         
         const lights = this.scene.a_lights
         for (let i = 0; i <lights.length; i++) {
             //(lights[i].v3_position)
             const light = lights[i]
-            
-            
-            
-            
-            if (record.length > 0) {
+            const diffuse_specular = this.whatLight(record, light)
+
+            //check if reflective
+            if (record.struckGeometry.j_material.f_reflectance>0 && recursion_amount < 3) {
+                recursion_amount +=1 
+                reflectedAmount = record.struckGeometry.j_material.f_reflectance
+                console.log(reflectedAmount)
+                reflectedColor = this.reflected(record)
+                recursion_amount -=1
                 
-                //take smallest t value thats positive !!!!!!!!!!!!!!!!!
-                const cmp = (a,b) => a.t-b.t || isNaN(a.t)-isNaN(b.t);
-                const sortedrecord = record.sort(cmp)
-                //console.log(sortedrecord)
-                
-                const final_light = this.whatLight(sortedrecord[0] ,light)
-                color_added.increaseBy(final_light)
-              //  color_added = this.struckGeometry.j_material.v3_diffuse
-                //const ret = new Vector3(sortedrecord[0].struckGeometry.j_material.v3_diffuse)
-               
             }
+            color_added.increaseBy(reflectedColor.scaleBy(reflectedAmount))
+            color_added.increaseBy(diffuse_specular)
             
-            else {
-                return new Vector3(0,0,0) 
-            }
-    }
+        }
+    
         return color_added
 
     }
@@ -189,8 +196,7 @@ export class RayTracer {
     
     // To add shading, break it into steps: whatLight(), diffuse(), highlight(), or similar
     whatLight(hit, light_source) {
-        
-        
+   
         
         //compute shadow and return black if shadow is there SHADOW CODE
         const point = hit.pt
@@ -207,8 +213,7 @@ export class RayTracer {
             return new Vector3([0, 0, 0]);
             }
         }
-        
-        
+
         const light_pos = light_source.v3_position
         const toLight = vectorDifference(light_pos, point).normalize()
         
@@ -216,65 +221,20 @@ export class RayTracer {
         const dif_color = this.diffuse(hit, light_source, toLight) 
         
         const spec_light = this.specular(hit, light_source, toLight)
-        recursion_amount +=1
-        console.log(recursion_amount)
-        
-        const reflect_color = this.reflection(hit, recursion_amount)
-     
      
         const returnMe = new Vector3(0,0,0)
         returnMe.increaseBy(dif_color)
         returnMe.increaseBy(spec_light)
-        returnMe.increaseBy(reflect_color)
         return returnMe
-        
-        
     }
     
     
-    reflection(hit, recursion_amount){
-                
-        let reflection_added = new Vector3 (0,0,0)
-        let color = "hi"
-        let r = 0
-        
-        //if hit geometry is reflective
-        if (hit.struckGeometry.j_material.f_reflectance>0){ 
-            
-            
-            const mirrorRay = this.bounce(hit)
-            const mirror_hit = mirrorRay.allHits(this.scene.a_geometries); //returning a 
-        
-            //TO DO NEXT: see if mirror ray hits anything, and if it does get color of that, also set recursion limit to 5-10 
-            console.log(mirror_hit)
-            
-            if (mirror_hit[0].struckGeometry.j_material.f_reflectance >0 && recursion_amount < 5) {
-                console.log("in loop")
-                r = mirror_hit[0].struckGeometry.j_material.f_reflectance
-                color = this.getColor(mirror_hit)
-                
-                
-               // console.log("recusion in loop", recursion_amount)
-            }
-            else {
-                console.log("else")
-                r = mirror_hit[0].struckGeometry.j_material.f_reflectance 
-                color = mirror_hit[0].struckGeometry.j_material.v3_diffuse
-                console.log(color)
-                
-            }
-            console.log(color)
-            
-            
-        reflection_added.increaseBy(color.scaleBy(r))
-            
-            
-        }
-        
-        return reflection_added
-        
-        
-        
+    reflected(hit){
+                    
+        const mirrorRay = this.bounce(hit)
+        const mirror_hit = this.traceRay(mirrorRay)
+ 
+        return mirror_hit
         
     }
     
@@ -282,35 +242,28 @@ export class RayTracer {
         
         const viewingRay = hit.ray
 
-        const vectored_viewingRay = viewingRay.start.increaseBy(viewingRay.dir) //is this right????????
-        
+        const vectored_viewingRay = viewingRay.dir 
         
         const normal = hit.normal
         
-        vectored_viewingRay.scaleBy(-1)
-        
-        
-        
-        const top = vectored_viewingRay.dotProduct(normal)
+        const inverse = vectored_viewingRay.scaleBy(-1)
+
+        const top = inverse.dotProduct(normal)
         const bottom = normal.dotProduct(normal)
         
-        const bounced = normal.scaleBy(2*(top/bottom))
-   
-        bounced.increaseByMultiple(vectored_viewingRay, -1)
+        const bounced_beginning = normal.scaleBy(2*(top/bottom))
         
-        const bouncedRay = new Ray(vectored_viewingRay, bounced)
+        const bounced = vectorDifference(bounced_beginning, inverse)
+        
+        const bouncedRay = new Ray(hit.pt, bounced)
+        console.log(bouncedRay)
     
         return bouncedRay
         
     
     }
     
-    
-    
-    
-    
-    
-    
+
     
     diffuse(hit, light, toLight) { //lambert computation
         
