@@ -367,6 +367,11 @@ class Ray {
         else if (g.s_type === 'cylinder') {
             return this.hitCylinder(g);
         }
+        
+        else if (g.s_type === 'triangle') {
+            return this.hitTriangle(g);
+        }
+        
         else {
             console.error("Shape of type " + g.s_type + " is not supported");
         }
@@ -419,6 +424,86 @@ class Ray {
         const hit = new HitRecord(this, t, pt, g, g.normal)
         return [hit];
         
+        
+    }
+    
+    
+    getM(a,b,c,d,e,f,g,h,i){
+        return (a*(e*i-h*f)) + (b*(g*f-d*i)) + (c*(d*h - e*g))
+    }
+    
+    beta(a,b,c,d,e,f,g,h,i,j,k,l){
+        return (j*(e*i - h*f)) + (k*(g*f - d*i)) + (l*(d*h-e*g))
+        
+    }
+    
+    gamma(a,b,c,d,e,f,g,h,i,j,k,l){
+        return (i*(a*k-j*b)) + (h*(j*c-a*l)) + (g*(b*l-k*c))
+    }
+    
+    getT(a,b,c,d,e,f,g,h,i,j,k,l){
+        
+        let returnMe = f*(a*k-j*b) + e*(j*c-a*l) + d*(b*l-k*c)
+        returnMe = returnMe * -1
+        return returnMe
+    }
+    
+    
+    
+    
+     hitTriangle(g){
+        
+        const a = g.v3_pt0;
+        const b = g.v3_pt1;
+        const c = g.v3_pt2;
+        
+        const e = this.start
+        const v = this.dir 
+        
+        
+        const edge1 = vectorDifference(b,a)
+        const edge2 = vectorDifference(b,c)
+        
+        const norm = edge2.crossProduct(edge1).normalize()
+        
+        //direction = v
+        //e is start 
+        
+        const m = this.getM(b.x-a.x, b.y-a.y, b.z-a.z, c.x-a.x, c.y-a.y, c.z-a.z, -v.x, -v.y, -v.z)
+        
+        let beta = this.beta(b.x-a.x, b.y-a.y, b.z-a.z, c.x-a.x, c.y-a.y, c.z-a.z, -v.x, -v.y, -v.z, e.x-a.x, e.y-a.y, e.z-a.z)
+        
+        beta = beta/m
+         
+        let gam = this.gamma(b.x-a.x, b.y-a.y, b.z-a.z, c.x-a.x, c.y-a.y, c.z-a.z, -v.x, -v.y, -v.z, e.x-a.x, e.y-a.y, e.z-a.z)
+        
+        gam = gam/m
+         
+        let t = this.getT(b.x-a.x, b.y-a.y, b.z-a.z, c.x-a.x, c.y-a.y, c.z-a.z, -v.x, -v.y, -v.z, e.x-a.x, e.y-a.y, e.z-a.z)
+        
+        t = t/m
+        const pt = this.tToPt(t)
+        
+        const alpha = 1-beta-gam
+        
+    
+        if (alpha<0 || alpha>1){
+            return []
+        }
+        
+        if (beta<0 || beta>1){
+            return []
+        }
+         
+        if (gam<0 || gam>1){
+            return []
+        }
+         
+        const hit =  new HitRecord(this, t, pt, g, norm)
+        return [hit]
+        
+        
+   
         
     }
 
@@ -639,6 +724,8 @@ class Ray {
         
 
     }
+    
+    
 //    hitCylinder(g) {
 //        const center = g3.v3_center
 //        const height = g.f_height
