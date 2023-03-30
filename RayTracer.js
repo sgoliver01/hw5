@@ -817,6 +817,7 @@ class AABBNode {
                 newBox = latestBox
             }
         }
+      
 
         this.box = newBox
         this.leaf = false
@@ -937,7 +938,7 @@ class AABBNode {
     }
     
     boxCylinder(g) {
-                /*
+        /*
         Return box around the given geometry, a cylinder.
         */
         const ret = {
@@ -950,9 +951,10 @@ class AABBNode {
     }
     
     boxSphere(g) {
+    
         const ret = {
             s_type: 'box',
-            v3_minPt: vectorDifference(g.v3_center, g.f_radius),
+            v3_minPt: new Vector3(g.v3_center.x - g.f_radius, g.v3_center.y - g.f_radius, g.v3_center.z - g.f_radius),
             v3_dim: new Vector3(2*g.f_radius, 2*g.f_radius, 2*g.f_radius)
         };
         return ret;
@@ -981,7 +983,6 @@ class AABBNode {
     }
     
     boxCone(g) {
-        console.log(g)
         
         const ret = {
             s_type: 'box',
