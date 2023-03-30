@@ -207,7 +207,7 @@ export class RayTracer {
         const shadowRay_dir = vectorDifference(light_source.v3_position, point)  
         const shadowRay = new Ray(point, shadowRay_dir)
         
-        const shadow_hit = shadowRay.hitsOfNode(new AABBNode(this.scene.a_geometries))
+        const shadow_hit = shadowRay.hitsOfNode(this.root)
             
         for (const hit of shadow_hit) { 
 
@@ -522,7 +522,7 @@ class Ray {
         
         //Y INTERVAL
         
-        //if v.x is 0
+        //if v.y is 0
         if (v.y == 0) {
             if ((boxY[0])<= e.y <= (boxY[1])) {
                 intervalY = [-1* Infinity, Infinity]
@@ -727,7 +727,6 @@ class Ray {
             return this.allHits(node.geometries)    
         }
         
-        //do i need to loop thru the hits???? or thru node. left and right????
   
         const leftHits = this.hitsOfNode(node.left)
         
@@ -737,23 +736,7 @@ class Ray {
         
         return fullHits
         
-        
-//          var leftHits = []
-//        var rightHits = []
-//        if (this.hitBox(node.left.box).length > 0) {
-//            leftHits = this.hitsOfNode(node.left)
-//           
-//        }
-//        
-//        
-//        else {
-//             rightHits = this.hitsOfNode(node.right)
-//             
-//            
-//        }
-//       
-  
-        
+
    
         
         }
@@ -807,29 +790,44 @@ class HitRecord {
 
 class AABBNode {
     constructor(g) {
-        this.geometries = g
-        const firstNode = this.boxAround(g[0])
-        const secondNode = this.boxAround(g[1])
-        var newBox = this.boxAround2(firstNode, secondNode)
-        if (g.length > 3) {
-            for (var i = 3; i < g.length; i++) {
-                const latestBox = this.boxAround2(this.boxAround(g[i]), newBox)
-                newBox = latestBox
-            }
-        }
-      
-
-        this.box = newBox
-        this.leaf = false
+       
+//        const firstNode = this.boxAround(g[0])
+//        const secondNode = this.boxAround(g[1])
+//        var newBox = this.boxAround2(firstNode, secondNode)
+//        if (g.length > 3) {
+//            for (var i = 2; i < g.length; i++) {
+//                const latestBox = this.boxAround2(this.boxAround(g[i]), newBox)
+//                newBox = latestBox
+//            }
+//        }
         
-        if (g.length <= 3) {
+        let box = null
+        for (const geo of g) {
+            if (box === null) {
+                box = this.boxAround(geo)
+            }
+            else {
+                box = this.boxAround2(this.boxAround(geo), box)
+            }
+            
+        }
+    
+        
+         if (g.length <= 3) {
             //make a leaf
+            this.geometries = g
             this.left = null
             this.right = null
-            this.box = newBox
+            this.box = box
             this.leaf = true
             return
         }
+      
+
+        this.box = box
+        this.leaf = false
+        
+        
         
         const boxX = this.box.v3_dim.x
         const boxY = this.box.v3_dim.y
@@ -840,13 +838,13 @@ class AABBNode {
         var sortedGeometries = []
         
         if (maxDim == boxX) {
-            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.x - this.boxAround(b).v3_minPt.x);
+            sortedGeometries = g.sort((a,b) => this.boxAround(a).v3_minPt.x - this.boxAround(b).v3_minPt.x);
         }
         else if (maxDim == boxY) {
-            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.y - this.boxAround(b).v3_minPt.y);
+            sortedGeometries = g.sort((a,b) => this.boxAround(a).v3_minPt.y - this.boxAround(b).v3_minPt.y);
         }
         else {
-            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.z - this.boxAround(b).v3_minPt.z);
+            sortedGeometries = g.sort((a,b) => this.boxAround(a).v3_minPt.z - this.boxAround(b).v3_minPt.z);
         }
         
      
