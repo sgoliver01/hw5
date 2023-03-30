@@ -1,4 +1,13 @@
 /* A skeleton of this file was written by Duncan Levear in Spring 2023 for CS3333 at Boston College */
+
+
+//for the images that render black, the box part of the node is undefined
+
+//am i getting some hit values of t < 0????????????????
+
+//hits of node not calling itself in a loop
+
+
 import {Vector3, vectorSum, vectorDifference, vectorScaled} from './Vector3.js'
 
 const EPSILON = 1e-9
@@ -46,6 +55,9 @@ export class RayTracer {
         For every pixel of this.image, compute its color, then use putPixel() to set it. 
         */
         // TODO
+        
+        this.root = new AABBNode(this.scene.a_geometries)
+        
           //set up camera and use to pass to ray
         const [e, u, v, w] = this.setupCamera()
         
@@ -62,7 +74,8 @@ export class RayTracer {
                 this.putPixel(row,col,color.x, color.y, color.z)
             }
         }
-        //at some point need to call the AABBNode constructor
+       
+       
     }
     
 
@@ -129,8 +142,8 @@ export class RayTracer {
         Determine the color of the given ray based on this.scene.
         */
         // TODO
-        const newNode = new AABBNode(this.scene.a_geometries)
-        const hits = ray.hitsOfNode(newNode);
+        
+        const hits = ray.hitsOfNode(this.root);
         
         let minHit = {t: Infinity}
         for (const h of hits) {
@@ -703,23 +716,45 @@ class Ray {
         //return list of hits between ray and objects contained at or below the given AABB-tree node
         
         
-        
         //check if ray hits node's bounding box
         const hits = this.hitBox(node.box)
+       
         //if ray doesn't hit node.boundingbox
         if (hits.length == 0) {
             return [] 
         }
-        if (node.left == null && node.right == null) {
+        if (node.leaf) {
             return this.allHits(node.geometries)    
         }
         
+        //do i need to loop thru the hits???? or thru node. left and right????
+  
         const leftHits = this.hitsOfNode(node.left)
+        
         const rightHits = this.hitsOfNode(node.right)
         
         const fullHits = leftHits.concat(rightHits)
         
         return fullHits
+        
+        
+//          var leftHits = []
+//        var rightHits = []
+//        if (this.hitBox(node.left.box).length > 0) {
+//            leftHits = this.hitsOfNode(node.left)
+//           
+//        }
+//        
+//        
+//        else {
+//             rightHits = this.hitsOfNode(node.right)
+//             
+//            
+//        }
+//       
+  
+        
+   
         
         }
 
@@ -782,16 +817,38 @@ class AABBNode {
                 newBox = latestBox
             }
         }
+
         this.box = newBox
+        this.leaf = false
+        
         if (g.length <= 3) {
             //make a leaf
             this.left = null
             this.right = null
             this.box = newBox
+            this.leaf = true
             return
         }
-        const sortedGeometries = g.sort((a,b) => this.boxAround(a).v3_minPt.x - this.boxAround(b).v3_minPt.x);
         
+        const boxX = this.box.v3_dim.x
+        const boxY = this.box.v3_dim.y
+        const boxZ = this.box.v3_dim.z
+        
+        const maxDim = Math.max(boxX, boxY, boxZ)
+        
+        var sortedGeometries = []
+        
+        if (maxDim == boxX) {
+            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.x - this.boxAround(b).v3_minPt.x);
+        }
+        else if (maxDim == boxY) {
+            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.y - this.boxAround(b).v3_minPt.y);
+        }
+        else {
+            sortedGeometries = this.geometries.sort((a,b) => this.boxAround(a).v3_minPt.z - this.boxAround(b).v3_minPt.z);
+        }
+        
+     
         const leftHalf = sortedGeometries.slice(0, sortedGeometries.length/2)
         const rightHalf = sortedGeometries.slice(sortedGeometries.length/2, sortedGeometries.length)
         this.left = new AABBNode(leftHalf)
