@@ -143,6 +143,7 @@ export class RayTracer {
         */
         // TODO
         
+        
         const hits = ray.hitsOfNode(this.root);
         
         let minHit = {t: Infinity}
@@ -206,7 +207,7 @@ export class RayTracer {
         
         const shadowRay_dir = vectorDifference(light_source.v3_position, point)  
         const shadowRay = new Ray(point, shadowRay_dir)
-        
+
         const shadow_hit = shadowRay.hitsOfNode(this.root)
             
         for (const hit of shadow_hit) { 
@@ -371,6 +372,9 @@ class Ray {
         }
         else if (g.s_type === 'triangle') {
             return this.hitTriangle(g);
+        }
+        else if (g.s_type === 'cone') {
+            return this.hitCone(g);
         }
         else {
             console.error("Shape of type " + g.s_type + " is not supported");
@@ -715,7 +719,6 @@ class Ray {
     hitsOfNode(node) {
         //return list of hits between ray and objects contained at or below the given AABB-tree node
         
-        
         //check if ray hits node's bounding box
         const hits = this.hitBox(node.box)
        
@@ -776,6 +779,31 @@ class Ray {
         }
         return ret
     }
+    
+    hitCone(g) {
+        const [px, py, pz] = g.v3_tip
+        const r = g.f_radius
+        const h = g.f_height
+        
+        const ex = this.start.x
+        const ey = this.start.y
+        const ez = this.start.z
+        
+        const vx = this.dir.x
+        const vy = this.dir.y
+        const vz = this.dir.z
+        
+        
+        const numerator = py*(Math.pow(ex,2)* Math.pow(h,2) - 2*ex*px*Math.pow(h,2) + Math.pow(px,2)*Math.pow(h,2) + Math.pow(ez,2)*Math.pow(h,2) + 2*ez*pz*Math.pow(h,2) + Math.pow(pz,2)*Math.pow(h,2) - Math.pow(ey,2)*Math.pow(r,2) + 2*ey*py*Math.pow(r,2) - Math.pow(py,2)*Math.pow(r,2))
+        
+        const denominator = 2*vz*Math.pow(h,2)*(ex - px + py*ez + py*pz)
+        
+        const t = numerator/denominator 
+        
+        
+    }
+    
+    
 }
 
 class HitRecord {
@@ -984,7 +1012,7 @@ class AABBNode {
         
         const ret = {
             s_type: 'box',
-            v3_minPt: vectorSum(g.v3_center, new Vector3(-g.f_radius, -g.f_height/2, -g.f_radius)),
+            v3_minPt: g.v3_tip,
             v3_dim: new Vector3(2*g.f_radius, g.f_height, 2*g.f_radius),
         };
         return ret;
