@@ -144,7 +144,8 @@ export class RayTracer {
         // TODO
         
         
-        const hits = ray.hitsOfNode(this.root);
+//        const hits = ray.hitsOfNode(this.root);
+        const hits = ray.allHits(this.scene.a_geometries);
         
         let minHit = {t: Infinity}
         for (const h of hits) {
@@ -208,7 +209,10 @@ export class RayTracer {
         const shadowRay_dir = vectorDifference(light_source.v3_position, point)  
         const shadowRay = new Ray(point, shadowRay_dir)
 
-        const shadow_hit = shadowRay.hitsOfNode(this.root)
+      //  const shadow_hit = shadowRay.hitsOfNode(this.root)
+        
+        const shadow_hit = shadowRay.allHits(this.scene.a_geometries)
+
             
         for (const hit of shadow_hit) { 
 
@@ -738,9 +742,7 @@ class Ray {
         const fullHits = leftHits.concat(rightHits)
         
         return fullHits
-        
 
-   
         
         }
 
@@ -781,7 +783,9 @@ class Ray {
     }
     
     hitCone(g) {
-        const [px, py, pz] = g.v3_tip
+        const px = g.v3_tip.x
+        const py = g.v3_tip.y
+        const pz = g.v3_tip.z
         const r = g.f_radius
         const h = g.f_height
         
@@ -793,16 +797,84 @@ class Ray {
         const vy = this.dir.y
         const vz = this.dir.z
         
-        
-        const numerator = py*(Math.pow(ex,2)* Math.pow(h,2) - 2*ex*px*Math.pow(h,2) + Math.pow(px,2)*Math.pow(h,2) + Math.pow(ez,2)*Math.pow(h,2) + 2*ez*pz*Math.pow(h,2) + Math.pow(pz,2)*Math.pow(h,2) - Math.pow(ey,2)*Math.pow(r,2) + 2*ey*py*Math.pow(r,2) - Math.pow(py,2)*Math.pow(r,2))
-        
-        const denominator = 2*vz*Math.pow(h,2)*(ex - px + py*ez + py*pz)
-        
-        const t = numerator/denominator 
+        const ux = ex - px
+        const uy = ey - py
+        const uz = ez - pz
         
         
+        
+        const a = Math.pow(vx,2) + Math.pow(vz,2) - ((Math.pow(r,2)/Math.pow(h,2))*Math.pow(vy,2))
+        const b = (2*vx*ux) + (2*vz*uz) -  (2*(Math.pow(r,2)/Math.pow(h,2))*vy*uy)
+        const c = Math.pow(ux,2) + Math.pow(uz,2) - ((Math.pow(r,2)/Math.pow(h,2))*Math.pow(uy,2))
+        
+        
+        
+        const discriminant = (b*b) - (4*a*c)
+  
+        const ret = []
+        if (discriminant > 0) {
+            
+            const t1 = (-b + (Math.sqrt(discriminant)))/(2*a)
+            const t2 = (-b - (Math.sqrt(discriminant)))/(2*a)
+            
+            var hit1 = 0
+            var hit2 = 0
+            
+            if (t1> 0) {
+                
+                const pt1 = this.tToPt(t1);
+                const pt1_normal = new Vector3((ex + t1*vx - px),(-(Math.pow(r,2)/Math.pow(h,2))*(ey-(t1*vy)-py)), (ez + t1*vz - pz)).normalize()
+                hit1 = new HitRecord(this, t1, pt1, g, pt1_normal)
+               
+                
+            }
+            
+            if (t2> 0) {
+                
+                const pt2 = this.tToPt(t2);
+                const pt2_normal =  new Vector3((ex + t2*vx - px),(-(Math.pow(r,2)/Math.pow(h,2))*(ey-(t2*vy)-py)), (ez + t2*vz - pz)).normalize()
+
+                hit2 = new HitRecord(this, t2, pt2, g, pt2_normal)
+               
+                
+            }
+            
+            
+             if (t1 < t2) {
+                ret.push(hit1, hit2)
+            }
+            else {
+                ret.push(hit2, hit1)
+            }
+            
+        }
+
+
+        for (const m of [-1,1]) {
+            const capCenter = new Vector3(g.v3_tip.x, g.v3_tip.y + h, g.v3_tip.z)
+            var normal = new Vector3(0,0,0)
+            if (h >0) {
+                normal = new Vector3(0,-1,0)
+            }
+            else {
+                normal = new Vector3(0,1,0)
+            }
+           // normal.normalize()
+            
+            const rhs = normal.dotProduct(capCenter)
+            const t = (rhs - this.start.dotProduct(normal))/this.dir.dotProduct(normal)
+            const hit = new HitRecord(this, t, this.tToPt(t), g, normal)
+            const ptToAxis = vectorDifference(capCenter, hit.pt)
+            if (ptToAxis.norm() < r) {
+                ret.push(hit)
+            }
+        }
+        
+        return ret
+    
     }
     
+        
     
 }
 
